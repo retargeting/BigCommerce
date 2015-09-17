@@ -1,0 +1,208 @@
+<!-- RA::helpers & embedding -->
+<script>
+_ra_cartItems = [];
+_ra_getVariation = function() {return false;};
+function _ra_queryApi(method, params) {
+	if (typeof method === 'undefined') return false;
+	params = JSON.stringify(params || '');
+	var _ra_js = document.createElement("script");
+	_ra_js.type ="text/javascript";
+	_ra_js.async = true;
+	_ra_js.src = "https://retargeting.biz/BigCommerce/api.php?method="+method+"&shop=<?php echo $app->shopId; ?>&params="+params;
+	var s = document.getElementsByTagName("script")[0];
+	document.getElementsByTagName("head")[0].appendChild(_ra_js);
+}
+/* RA::embedd */
+_ra_queryApi('embedd');
+</script>
+
+<!-- RA::generalMethods -->
+<script>
+$(document).ready(function() {
+	/* RA::setEmail */
+	var _ra_input = document.querySelector('#login_email');
+	if (_ra_input !== null) {
+		_ra_input.addEventListener("change", function() {
+			_ra_ce = this.value;
+			_ra_queryApi('setEmail', {id: _ra_ce});	
+		});
+	}
+	/* RA::addToCart */
+	$('.add-to-cart, a[href*="cart.php?action=add"]').click(function() {
+		var _ra_pid = typeof _ra_ProductId !== 'undefined' ? _ra_ProductId : null;
+		if (_ra_pid == null) {
+			var _ra_regex = $(this).attr('href').match(/cart.php\?action=add\&product_id=([0-9]+)/);
+			_ra_pid = (_ra_regex !== null ? _ra_regex[1] : null);
+		}
+		if (_ra_pid !== null) {
+			_ra.addToCart(_ra_pid, _ra_getVariation());
+		}
+	});
+	/* RA::addToWishlist */
+	$('.wishTrigger').click(function() {
+		var _ra_pid = typeof _ra_ProductId !== 'undefined' ? _ra_ProductId : null;
+		if (_ra_pid !== null) {
+			_ra.addToWishlist(_ra_pid);
+		}
+	});
+});
+/* RA::visitHelpPages */
+_ra_queryApi('visitHelpPages', {id: encodeURIComponent(window.location.pathname)});
+</script>
+
+
+
+<script>
+/* RA::sendCategory */
+if (typeof category !== 'undefined') _ra_queryApi('sendCategory', {id: category});
+</script>
+
+
+
+<script>
+/* RA::sendBrand */
+if ("%%GLOBAL_TrailBrandName%%" != "") _ra_queryApi('sendBrand', {id: encodeURIComponent("%%GLOBAL_TrailBrandName%%")});
+</script>
+
+
+
+<!-- RA::productMethods -->
+<script>
+var _ra_ProductId = '%%GLOBAL_ProductId%%';
+$(document).ready(function() {
+	/* RA::sendProduct */
+	if (_ra_ProductId !== '') {
+		_ra_queryApi('sendProduct', {id: _ra_ProductId});
+	}
+
+	/* RA::setVariation */
+	$('.productAttributeRow .option, .productAttributeRow .swatch, .productAttributeRow .checker, .productAttributeRow .radio').click(function() {
+		_ra_setVariation();
+	});
+	$('.productAttributeRow .Field').change(function() {
+		_ra_setVariation();
+	});
+	_ra_getVariation = function() {
+		var _ra_pid = typeof _ra_ProductId !== 'undefined' ? _ra_ProductId : null;
+		if (_ra_pid === null) return false;
+		var _ra_variation = false,
+			_ra_arr_code = [],
+			_ra_arr_details = [];
+		for (var i = 0; i < $('.productAttributeRow').length; i++) {
+			var _ra_el = $('.productAttributeRow')[i],
+				_ra_elInner = null,
+				_ra_oValue = null,
+				_ra_oLabel = null;
+			
+			_ra_oLabel = $(_ra_el).find('.productAttributeLabel .name');
+			if (_ra_oLabel.length) {
+				_ra_oLabel = _ra_oLabel.text();
+			}
+			_ra_elInner = $(_ra_el).find('.selectedValue .name, .Field');
+			if (_ra_elInner.length) {
+				_ra_oValue = _ra_elInner.text();
+			} else {
+				_ra_elInner = $(_ra_el).find('.checker');
+				if (_ra_elInner.length) {
+					_ra_elInner = $(_ra_elInner).find('[type="checkbox"]');
+					_ra_oValue = _ra_elInner.checked ? 'Yes' : 'No';
+				}	
+			}
+
+			if (_ra_oValue !== "" && _ra_oValue !== null && _ra_oLabel !== null) {
+				_ra_oValue = _ra_oValue.replace(/-/g, '');
+				_ra_arr_code.push(_ra_oValue);
+				_ra_arr_details[_ra_oValue] = {"category_name": _ra_oLabel, "category": _ra_oLabel, "value": _ra_oValue};
+			}
+		}
+
+		if (_ra_arr_code.length > 0) 
+			_ra_variation = {
+				"code": _ra_arr_code.join("-"),
+				"details": _ra_arr_details
+			};
+		return _ra_variation;
+	};
+	function _ra_setVariation() {
+		var _ra_pid = typeof _ra_ProductId !== 'undefined' ? _ra_ProductId : null;
+		if (_ra_pid !== null) {
+			_ra = typeof _ra !== 'undefined' ? _ra : {};
+			_ra.setVariationInfo = {
+				"product_id": _ra_pid,
+				"variation": _ra_getVariation()
+			};
+			if (_ra.ready !== undefined) {
+				_ra.setVariation(_ra.setVariationInfo.product_id, _ra.setVariationInfo.variation);
+			}
+		}
+	}
+	/* RA::clickImage */
+	document.querySelector(".ProductThumbImage").addEventListener("mouseover", function(ev) {
+		var _ra_pid = typeof _ra_ProductId !== 'undefined' ? _ra_ProductId : null;
+
+		if (_ra_pid !== null) {
+			_ra.clickImage(_ra_pid);
+		}
+	});
+	/* RA::commentOnProduct */
+	$('form[action*="postreview.php"] [type="submit"]').click(function() {
+		var _ra_pid = typeof _ra_ProductId !== 'undefined' ? _ra_ProductId : null;
+
+		if (_ra_pid !== null) {
+			_ra.commentOnProduct(_ra_pid);
+		}
+	});
+	/* RA::mouseOverPrice */
+	var _ra_mop = document.querySelectorAll('.ProductMain .ProductPrice');
+	for (var i = 0; i < _ra_mop.length; i ++) {
+		_ra_mop[i].addEventListener("mouseover", function(ev) {
+			var _ra_pid = typeof _ra_ProductId !== 'undefined' ? _ra_ProductId : null;
+
+			if (_ra_pid !== null) {
+				_ra_queryApi('mouseOverPrice', {id: _ra_pid});
+			}
+		});	
+	}
+	/* RA::mouseOverAddToCart */
+	document.querySelector('.ProductMain .add-to-cart').addEventListener("mouseover", function() {
+		var _ra_pid = typeof _ra_ProductId !== 'undefined' ? _ra_ProductId : null;
+
+		if (_ra_pid !== null && typeof _ra.mouseOverAddToCart !== 'undefined') {
+			_ra.mouseOverAddToCart(_ra_pid);
+		}
+	});
+	/* RA::likeFacebook */
+	if (typeof FB != "undefined") {
+		FB.Event.subscribe("edge.create", function () {
+			var _ra_pid = typeof _ra_ProductId !== 'undefined' ? _ra_ProductId : null;
+
+			if (_ra_pid !== null) {
+				_ra.likeFacebook(_ra_pid);
+			}
+		});
+	};
+});
+</script>
+
+
+
+<!-- RA::orderMethods -->
+<script>
+/* RA::saveOrder */
+_ra_queryApi('saveOrder', {id: "%%GLOBAL_OrderId%%"});
+</script>
+
+
+
+<!-- RA::checkoutMethods -->
+<script>
+_ra_cartItems.push(%%GLOBAL_ProductId%%);
+</script>​
+<script>
+/* RA::checkoutIds */
+var _ra = _ra || {};
+_ra.checkoutIdsInfo = _ra_cartItems;
+if (_ra.ready !== undefined) {
+	_ra.checkoutIds(_ra.checkoutIdsInfo);
+}
+</script>
